@@ -1,5 +1,6 @@
 """
-Maze generation logic with structural 42 and controlled imperfect mode.
+Maze generation logic with structural 42,
+clean DFS handling and controlled imperfect mode.
 """
 
 import random
@@ -31,8 +32,6 @@ class MazeGenerator:
         if seed is not None:
             random.seed(seed)
 
-        self._validate_positions()
-
         self.maze: List[List[int]] = []
 
         # Cells forming the 42 shape
@@ -40,18 +39,32 @@ class MazeGenerator:
 
         self._prepare_42_structure()
 
+        self._validate_positions()
+
+
+    # --------------------------------------------------
+    # Basic validation
     # --------------------------------------------------
 
     def _validate_positions(self) -> None:
         if not inside_bounds(*self.entry, self.width, self.height):
             raise ValueError("Entry outside maze bounds.")
+
         if not inside_bounds(*self.exit, self.width, self.height):
             raise ValueError("Exit outside maze bounds.")
+
         if self.entry == self.exit:
             raise ValueError("Entry and Exit must differ.")
 
+        if self.entry in self.pattern_cells:
+            raise ValueError("Entry cannot be inside the 42 pattern.")
+
+        if self.exit in self.pattern_cells:
+            raise ValueError("Exit cannot be inside the 42 pattern.")
+        
+
     # --------------------------------------------------
-    # Prepare 42 shape coordinates
+    # Prepare 42 coordinates
     # --------------------------------------------------
 
     def _prepare_42_structure(self) -> None:
@@ -78,16 +91,22 @@ class MazeGenerator:
                         self.pattern_cells.add((cx, cy))
 
     # --------------------------------------------------
-    # Generate maze (DFS)
+    # DFS Maze Generation
     # --------------------------------------------------
 
     def generate(self) -> None:
+        # Reset full grid
         self.maze = [
             [0b1111 for _ in range(self.width)]
             for _ in range(self.height)
         ]
 
         visited = [[False] * self.width for _ in range(self.height)]
+
+        # Mark 42 cells as already visited (treated as obstacles)
+        for (x, y) in self.pattern_cells:
+            visited[y][x] = True
+
         stack = [self.entry]
         visited[self.entry[1]][self.entry[0]] = True
 
@@ -99,10 +118,7 @@ class MazeGenerator:
                 nx, ny = x + dx, y + dy
 
                 if inside_bounds(nx, ny, self.width, self.height):
-                    if (
-                        not visited[ny][nx]
-                        and (nx, ny) not in self.pattern_cells
-                    ):
+                    if not visited[ny][nx]:
                         neighbors.append((d, nx, ny))
 
             if neighbors:
@@ -114,7 +130,7 @@ class MazeGenerator:
             else:
                 stack.pop()
 
-        # Close 42 cells fully
+        # Ensure 42 cells remain fully closed
         for (x, y) in self.pattern_cells:
             self.maze[y][x] = 0b1111
 
@@ -127,13 +143,12 @@ class MazeGenerator:
         self.maze[y][x] &= ~(1 << bit)
 
     # --------------------------------------------------
-    # Controlled cycle insertion (imperfect mode)
+    # Controlled Imperfect Mode
     # --------------------------------------------------
 
     def _add_cycles(self) -> None:
         candidates = []
 
-        # Collect closed walls between adjacent cells
         for y in range(self.height):
             for x in range(self.width):
                 if (x, y) in self.pattern_cells:
@@ -163,41 +178,61 @@ class MazeGenerator:
             dx, dy, bit = DIRECTIONS[d]
             nx, ny = x + dx, y + dy
 
-            if self._would_create_large_room(x, y):
-                continue
-
-            # Remove wall both sides
+            # Temporarily remove wall
             self.maze[y][x] &= ~(1 << bit)
-
             _, _, opposite_bit = DIRECTIONS[OPPOSITE[d]]
             self.maze[ny][nx] &= ~(1 << opposite_bit)
 
+            if self._has_large_open_area():
+                # Revert
+                self.maze[y][x] |= (1 << bit)
+                self.maze[ny][nx] |= (1 << opposite_bit)
+                continue
+
             cycles_added += 1
 
-    def _would_create_large_room(self, x: int, y: int) -> bool:
-        """
-        Prevent 3x3 open areas.
-        """
+    # --------------------------------------------------
+    # Room size validation
+    # --------------------------------------------------
 
-        for yy in range(max(0, y - 1), min(self.height - 1, y + 1)):
-            for xx in range(max(0, x - 1), min(self.width - 1, x + 1)):
-                open_cells = 0
-
-                for dy in range(2):
-                    for dx in range(2):
-                        cx = xx + dx
-                        cy = yy + dy
-                        if inside_bounds(cx, cy, self.width, self.height):
-                            if self.maze[cy][cx] == 0:
-                                open_cells += 1
-
-                if open_cells == 4:
+    def _has_large_open_area(self) -> bool:
+        # Check 3x3 fully open
+        for y in range(self.height - 2):
+            for x in range(self.width - 2):
+                open_count = 0
+                for dy in range(3):
+                    for dx in range(3):
+                        if self.maze[y + dy][x + dx] == 0:
+                            open_count += 1
+                if open_count == 9:
                     return True
+
+        # Check horizontal width > 2
+        for y in range(self.height):
+            consecutive = 0
+            for x in range(self.width):
+                if self.maze[y][x] == 0:
+                    consecutive += 1
+                    if consecutive >= 3:
+                        return True
+                else:
+                    consecutive = 0
+
+        # Check vertical width > 2
+        for x in range(self.width):
+            consecutive = 0
+            for y in range(self.height):
+                if self.maze[y][x] == 0:
+                    consecutive += 1
+                    if consecutive >= 3:
+                        return True
+                else:
+                    consecutive = 0
 
         return False
 
     # --------------------------------------------------
-    # Shortest path
+    # Shortest path (BFS)
     # --------------------------------------------------
 
     def shortest_path(self) -> str:
