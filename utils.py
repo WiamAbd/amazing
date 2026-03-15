@@ -2,8 +2,6 @@
 Utility constants and helpers.
 """
 
-from typing import Tuple
-
 DIRECTIONS = {
     "N": (0, -1, 0),
     "E": (1, 0, 1),

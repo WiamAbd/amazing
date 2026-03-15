@@ -9,7 +9,7 @@ from renderer import run_menu
 def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt")
-        sys.exit(1)
+        return
 
     try:
         config = parse_config(sys.argv[1])
@@ -30,7 +30,7 @@ def main() -> None:
 
     except Exception as e:
         print(f"Error: {e}")
-        sys.exit(1)
+        return
 
 
 if __name__ == "__main__":

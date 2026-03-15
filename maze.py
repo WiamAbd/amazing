@@ -5,7 +5,6 @@ clean DFS handling and controlled imperfect mode.
 
 import random
 from typing import List, Tuple, Optional
-from collections import deque
 from utils import DIRECTIONS, OPPOSITE, inside_bounds
 
 
@@ -41,7 +40,6 @@ class MazeGenerator:
 
         self._validate_positions()
 
-
     # --------------------------------------------------
     # Basic validation
     # --------------------------------------------------
@@ -72,10 +70,16 @@ class MazeGenerator:
             "X   XXX",
             "X     X",
             "XXX XXX",
-            "  X X",
+            "  X X  ",
             "  X XXX",
         ]
-
+        # pattern = [
+        #     "XX XXX XXX XXXX",
+        #     " X   X   X    X",
+        #     " X XXX XXX   X ",
+        #     " X   X   X  X  ",
+        #     " X XXX XXX X   ",]
+        
         ph = len(pattern)
         pw = max(len(row) for row in pattern)
 
@@ -84,6 +88,7 @@ class MazeGenerator:
 
         for y in range(ph):
             for x in range(len(pattern[y])):
+            #for x in range(pw):
                 if pattern[y][x] == "X":
                     cx = start_x + x
                     cy = start_y + y
@@ -101,7 +106,12 @@ class MazeGenerator:
             for _ in range(self.height)
         ]
 
-        visited = [[False] * self.width for _ in range(self.height)]
+        visited = []
+        for _ in range(self.height):
+            row = []
+            for _ in range(self.width):
+                row.append(False)
+            visited.append(row)
 
         # Mark 42 cells as already visited (treated as obstacles)
         for (x, y) in self.pattern_cells:
@@ -140,8 +150,7 @@ class MazeGenerator:
 
     def _remove_wall(self, x: int, y: int, d: str) -> None:
         _, _, bit = DIRECTIONS[d]
-        self.maze[y][x] &= ~(1 << bit)
-
+        self.maze[y][x]=self.maze[y][x] & ~(1 << bit)
     # --------------------------------------------------
     # Controlled Imperfect Mode
     # --------------------------------------------------
@@ -207,28 +216,6 @@ class MazeGenerator:
                 if open_count == 9:
                     return True
 
-        # Check horizontal width > 2
-        for y in range(self.height):
-            consecutive = 0
-            for x in range(self.width):
-                if self.maze[y][x] == 0:
-                    consecutive += 1
-                    if consecutive >= 3:
-                        return True
-                else:
-                    consecutive = 0
-
-        # Check vertical width > 2
-        for x in range(self.width):
-            consecutive = 0
-            for y in range(self.height):
-                if self.maze[y][x] == 0:
-                    consecutive += 1
-                    if consecutive >= 3:
-                        return True
-                else:
-                    consecutive = 0
-
         return False
 
     # --------------------------------------------------
@@ -236,11 +223,12 @@ class MazeGenerator:
     # --------------------------------------------------
 
     def shortest_path(self) -> str:
-        queue = deque([(self.entry, "")])
+        """Find shortest path from entry to exit using BFS."""
+        queue = [(self.entry, "")]
         visited = {self.entry}
 
         while queue:
-            (x, y), path = queue.popleft()
+            (x, y), path = queue.pop(0)  # ← only change from deque version
 
             if (x, y) == self.exit:
                 return path
