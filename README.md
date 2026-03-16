@@ -36,7 +36,7 @@ The project strictly follows the mandatory requirements defined in the subject.
 
 # How to Run
 
-make run CONFIG=config.txt
+python3 a_maze_ing.py config.txt
 
 ## Install dependencies
 

@@ -1,11 +1,24 @@
-"""
-Maze generation logic with structural 42,
-clean DFS handling and controlled imperfect mode.
-"""
-
 import random
 from typing import List, Tuple, Optional
-from utils import DIRECTIONS, OPPOSITE, inside_bounds
+
+
+DIRECTIONS = {
+    "N": (0, -1, 0),
+    "E": (1, 0, 1),
+    "S": (0, 1, 2),
+    "W": (-1, 0, 3),
+}
+
+OPPOSITE = {
+    "N": "S",
+    "S": "N",
+    "E": "W",
+    "W": "E",
+}
+
+
+def inside_bounds(x: int, y: int, width: int, height: int) -> bool:
+    return 0 <= x < width and 0 <= y < height
 
 
 class MazeGenerator:
@@ -33,11 +46,9 @@ class MazeGenerator:
 
         self.maze: List[List[int]] = []
 
-        # Cells forming the 42 shape
-        self.pattern_cells = set()
+        self.pattern_cells: set[tuple[int, int]] = set()
 
         self._prepare_42_structure()
-
         self._validate_positions()
 
     # --------------------------------------------------
@@ -59,7 +70,6 @@ class MazeGenerator:
 
         if self.exit in self.pattern_cells:
             raise ValueError("Exit cannot be inside the 42 pattern.")
-        
 
     # --------------------------------------------------
     # Prepare 42 coordinates
@@ -73,13 +83,7 @@ class MazeGenerator:
             "  X X  ",
             "  X XXX",
         ]
-        # pattern = [
-        #     "XX XXX XXX XXXX",
-        #     " X   X   X    X",
-        #     " X XXX XXX   X ",
-        #     " X   X   X  X  ",
-        #     " X XXX XXX X   ",]
-        
+
         ph = len(pattern)
         pw = max(len(row) for row in pattern)
 
@@ -88,7 +92,6 @@ class MazeGenerator:
 
         for y in range(ph):
             for x in range(len(pattern[y])):
-            #for x in range(pw):
                 if pattern[y][x] == "X":
                     cx = start_x + x
                     cy = start_y + y
@@ -100,7 +103,6 @@ class MazeGenerator:
     # --------------------------------------------------
 
     def generate(self) -> None:
-        # Reset full grid
         self.maze = [
             [0b1111 for _ in range(self.width)]
             for _ in range(self.height)
@@ -113,7 +115,6 @@ class MazeGenerator:
                 row.append(False)
             visited.append(row)
 
-        # Mark 42 cells as already visited (treated as obstacles)
         for (x, y) in self.pattern_cells:
             visited[y][x] = True
 
@@ -140,17 +141,16 @@ class MazeGenerator:
             else:
                 stack.pop()
 
-        # Ensure 42 cells remain fully closed
         for (x, y) in self.pattern_cells:
             self.maze[y][x] = 0b1111
 
-        # Add controlled cycles if imperfect
         if not self.perfect:
             self._add_cycles()
 
     def _remove_wall(self, x: int, y: int, d: str) -> None:
         _, _, bit = DIRECTIONS[d]
-        self.maze[y][x]=self.maze[y][x] & ~(1 << bit)
+        self.maze[y][x] = self.maze[y][x] & ~(1 << bit)
+
     # --------------------------------------------------
     # Controlled Imperfect Mode
     # --------------------------------------------------
@@ -187,14 +187,12 @@ class MazeGenerator:
             dx, dy, bit = DIRECTIONS[d]
             nx, ny = x + dx, y + dy
 
-            # Temporarily remove wall
-            self.maze[y][x] &= ~(1 << bit)
-            _, _, opposite_bit = DIRECTIONS[OPPOSITE[d]]
-            self.maze[ny][nx] &= ~(1 << opposite_bit)
+            self._remove_wall(x, y, d)
+            self._remove_wall(nx, ny, OPPOSITE[d])
 
             if self._has_large_open_area():
-                # Revert
                 self.maze[y][x] |= (1 << bit)
+                _, _, opposite_bit = DIRECTIONS[OPPOSITE[d]]
                 self.maze[ny][nx] |= (1 << opposite_bit)
                 continue
 
@@ -205,7 +203,6 @@ class MazeGenerator:
     # --------------------------------------------------
 
     def _has_large_open_area(self) -> bool:
-        # Check 3x3 fully open
         for y in range(self.height - 2):
             for x in range(self.width - 2):
                 open_count = 0
@@ -223,12 +220,11 @@ class MazeGenerator:
     # --------------------------------------------------
 
     def shortest_path(self) -> str:
-        """Find shortest path from entry to exit using BFS."""
         queue = [(self.entry, "")]
-        visited = {self.entry}
+        visited = [self.entry]
 
         while queue:
-            (x, y), path = queue.pop(0)  # ← only change from deque version
+            (x, y), path = queue.pop(0)
 
             if (x, y) == self.exit:
                 return path
@@ -237,7 +233,7 @@ class MazeGenerator:
                 if not (self.maze[y][x] & (1 << bit)):
                     nx, ny = x + dx, y + dy
                     if (nx, ny) not in visited:
-                        visited.add((nx, ny))
+                        visited.append((nx, ny))
                         queue.append(((nx, ny), path + d))
 
         return ""
@@ -249,11 +245,11 @@ class MazeGenerator:
     def write_output(self, filename: str) -> None:
         path = self.shortest_path()
 
-        with open(filename, "w", encoding="utf-8") as f:
+        with open(filename, "w") as file:
             for row in self.maze:
-                f.write("".join(f"{cell:X}" for cell in row) + "\n")
+                file.write("".join(f"{cell:X}" for cell in row) + "\n")
 
-            f.write("\n")
-            f.write(f"{self.entry[0]},{self.entry[1]}\n")
-            f.write(f"{self.exit[0]},{self.exit[1]}\n")
-            f.write(f"{path}\n")
+            file.write("\n")
+            file.write(f"{self.entry[0]},{self.entry[1]}\n")
+            file.write(f"{self.exit[0]},{self.exit[1]}\n")
+            file.write(f"{path}\n")

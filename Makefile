@@ -1,7 +1,8 @@
 PYTHON = python3
 MAIN = a_maze_ing.py
+CONFIG = config.txt
 
-.PHONY: install run debug clean lint lint-strict
+.PHONY: install run debug clean lint
 
 install:
 	$(PYTHON) -m pip install --user flake8 mypy

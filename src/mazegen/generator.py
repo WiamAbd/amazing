@@ -1,7 +1,3 @@
-"""
-mazegen - Reusable Maze Generator module.
-"""
-
 import random
 from typing import List, Tuple, Optional
 from collections import deque
@@ -23,14 +19,6 @@ OPPOSITE = {
 
 
 class MazeGenerator:
-    """
-    Reusable maze generator class.
-
-    Example:
-        maze = MazeGenerator(20, 15, (1,1), (18,13), perfect=True)
-        maze.generate()
-        path = maze.shortest_path()
-    """
 
     def __init__(
         self,

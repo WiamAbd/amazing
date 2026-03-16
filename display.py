@@ -1,7 +1,3 @@
-"""
-Renderer with color rotation and menu.
-"""
-
 from maze import MazeGenerator
 
 RESET = "\033[0m"
@@ -16,7 +12,7 @@ COLOR_THEMES = [
 current_theme_index = 0
 
 
-def render(maze: MazeGenerator, show_path: bool = False) -> None:
+def display(maze: MazeGenerator, show_path: bool = False) -> None:
     theme = COLOR_THEMES[current_theme_index]
 
     wall_color = theme["walls"]
@@ -57,7 +53,7 @@ def render(maze: MazeGenerator, show_path: bool = False) -> None:
             elif (i, j) == maze.exit:
                 content = path_color + " X " + RESET
             elif show_path and (i, j) in path_positions:
-                content = path_color + " . " + RESET
+                content = path_color + " * " + RESET
             elif (i, j) in maze.pattern_cells:
                 content = pattern_color + "███" + RESET
             else:
@@ -73,8 +69,8 @@ def render(maze: MazeGenerator, show_path: bool = False) -> None:
         print(row)
 
         row = wall_color + "+"
-        for i in range(width):
-            cell = maze.maze[j][i]
+        for k in range(width):
+            cell = maze.maze[j][k]
             if cell & (1 << 2):
                 row += "---+"
             else:
@@ -90,7 +86,7 @@ def run_menu(maze: MazeGenerator) -> None:
 
     while True:
         print("\n=== A-Maze-ing ===")
-        render(maze, show_path)
+        display(maze, show_path)
 
         print("1. Re-generate a new maze")
         print("2. Show/Hide path from entry to exit")

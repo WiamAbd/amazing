@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 import sys
 from config_parser import parse_config
 from maze import MazeGenerator
-from renderer import run_menu
+from display import run_menu
 
 
 def main() -> None:
@@ -28,9 +26,8 @@ def main() -> None:
 
         run_menu(maze)
 
-    except Exception as e:
-        print(f"Error: {e}")
-        return
+    except Exception as exc:
+        print(f"Error: {exc}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
+README.md
 pyproject.toml
-src/mazegen/ generator.py
 src/mazegen/__init__.py
+src/mazegen/generator.py
 src/mazegen.egg-info/PKG-INFO
 src/mazegen.egg-info/SOURCES.txt
 src/mazegen.egg-info/dependency_links.txt

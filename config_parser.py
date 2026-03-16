@@ -1,7 +1,3 @@
-"""
-Configuration parser for maze project.
-"""
-
 from typing import Dict, Tuple, Any
 
 
@@ -13,8 +9,8 @@ def parse_config(filename: str) -> Dict[str, Any]:
     config: Dict[str, str] = {}
 
     try:
-        with open(filename, "r") as file:
-            for line in file:
+        with open(filename, "r") as config_file:
+            for line in config_file:
                 line = line.strip()
 
                 if not line or line.startswith("#"):
@@ -56,8 +52,8 @@ def parse_config(filename: str) -> Dict[str, Any]:
         if "SEED" in config:
             parsed["SEED"] = int(config["SEED"])
 
-    except ValueError as e:
-        raise ValueError(f"Invalid configuration values: {e}")
+    except ValueError as exc:
+        raise ValueError(f"Invalid configuration values: {exc}")
 
     return parsed
 
