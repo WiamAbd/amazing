@@ -23,7 +23,6 @@ The project strictly follows the mandatory requirements defined in the subject.
 - Perfect / Imperfect mode
 - Structural “42” pattern integrated in the maze
 - No 3x3 open areas
-- No corridors wider than 2 cells
 - Wall coherence validation
 - Border closure validation
 - Hexadecimal file output
@@ -38,7 +37,16 @@ The project strictly follows the mandatory requirements defined in the subject.
 
 python3 a_maze_ing.py config.txt
 
+## How to intall mazegen package
+
+python -m build
+pip install dist/mazegen-1.0.0-py3-none-any.whl
+pip show mazegen
+
 ## Install dependencies
 
 ```bash
 make install
+
+export PATH="$HOME/.local/bin:$PATH"
+source ~/.zshrc
